@@ -1,8 +1,9 @@
-package com.ywsh.ywsh
+package com.ywsh.view.activity
 
-import android.support.v7.app.AppCompatActivity
+import android.content.Intent
 import android.os.Bundle
-import android.widget.TextView
+import android.support.v7.app.AppCompatActivity
+import com.ywsh.ywsh.R
 import kotlinx.android.synthetic.main.activity_main.*
 
 class MainActivity : AppCompatActivity() {
@@ -11,7 +12,13 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         // Example of a call to a native method
-        sample_text.text = stringFromJNI()
+
+        tv_animation.setOnClickListener {
+
+            var startIntent = Intent(this@MainActivity, AnimotionActivity::class.java)
+
+            startActivity(startIntent)
+        }
     }
 
     /**
@@ -27,4 +34,5 @@ class MainActivity : AppCompatActivity() {
             System.loadLibrary("native-lib")
         }
     }
+
 }

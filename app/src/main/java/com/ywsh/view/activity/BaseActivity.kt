@@ -1,6 +1,6 @@
-package com.ywsh
+package com.ywsh.view.activity
 
-import android.app.Application
+import android.support.v7.app.AppCompatActivity
 
 /**
  * Copyright, 2020, WhyHow info, All right reserved.
@@ -10,11 +10,6 @@ import android.app.Application
  * Created Time: 2020/5/15
  * Descroption:
  */
-class YWSHApp : Application(){
-    override fun onCreate() {
-        super.onCreate()
+class BaseActivity : AppCompatActivity() {
 
-                //do sth. init
-
-    }
 }
