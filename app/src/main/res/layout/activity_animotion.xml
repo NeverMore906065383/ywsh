@@ -6,4 +6,9 @@
     android:layout_height="match_parent"
     tools:context="com.ywsh.view.activity.AnimotionActivity">
 
+    <Buttqon
+        android:text="animotion"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"/>
+
 </android.support.constraint.ConstraintLayout>

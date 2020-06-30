@@ -1,5 +1,7 @@
 package com.ywsh.view.activity
 
+import android.os.Bundle
+import android.os.PersistableBundle
 import android.support.v7.app.AppCompatActivity
 
 /**
@@ -10,6 +12,10 @@ import android.support.v7.app.AppCompatActivity
  * Created Time: 2020/5/15
  * Descroption:
  */
-class BaseActivity : AppCompatActivity() {
+open class BaseActivity : AppCompatActivity() {
+    override fun onCreate(savedInstanceState: Bundle?, persistentState: PersistableBundle?) {
+        super.onCreate(savedInstanceState, persistentState)
+        setTitle("" + this.javaClass.name)
+    }
 
 }

@@ -1,24 +1,23 @@
 package com.ywsh.view.activity
 
 import android.content.Intent
+import android.databinding.DataBindingUtil
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
+import com.ywsh.vm.MainViewModel
 import com.ywsh.ywsh.R
-import kotlinx.android.synthetic.main.activity_main.*
+import com.ywsh.ywsh.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
+    private lateinit var binding: ActivityMainBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
         // Example of a call to a native method
-
-        tv_animation.setOnClickListener {
-
-            var startIntent = Intent(this@MainActivity, AnimotionActivity::class.java)
-
-            startActivity(startIntent)
-        }
+        binding = DataBindingUtil.setContentView(this, R.layout.activity_main)
+        val mainViewModel = MainViewModel(this, binding)
+        binding.viewModel = mainViewModel
+        startActivity(Intent(this, WidgetActivity::class.java))
     }
 
     /**
