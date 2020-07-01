@@ -1,5 +1,6 @@
 package com.ywsh.widget
 
+import android.animation.Animator
 import android.animation.ValueAnimator
 import android.animation.ValueAnimator.AnimatorUpdateListener
 import android.content.Context
@@ -17,10 +18,6 @@ import kotlin.math.pow
 import kotlin.math.sqrt
 
 
-
-
-
-
 /**
  * Copyright, 2020, WhyHow info, All right reserved.
  *
@@ -33,11 +30,14 @@ import kotlin.math.sqrt
 class Roullete(context: Context, attributeSet: AttributeSet) : View(context), View.OnTouchListener {
     private lateinit var mBgPaint: Paint
     private lateinit var mSpPaint: Paint
-    private lateinit var mArcPaint: Paint
+    private lateinit var mOutArcPaint: Paint
+    private lateinit var mInsideArcPaint: Paint
     private var colorList = listOf(Color.RED, Color.BLUE, Color.GREEN, Color.RED, Color.BLUE, Color.GREEN, Color.RED, Color.BLUE, Color.GREEN)
     private var isOutsideSelectedItem = -1
     private var isInsideSelectedItem = -1
-    private var animator: ValueAnimator? = null
+    private var selectSameArea = false
+    private var mDiverAnimator: ValueAnimator? = null
+    private var mReturnAnimator: ValueAnimator? = null
     private var animatedValue: Float = 0f
     private val TAG = "Roullete-"
     private var outAreaItem: MutableList<Int> = mutableListOf()
@@ -47,6 +47,7 @@ class Roullete(context: Context, attributeSet: AttributeSet) : View(context), Vi
         const val outCircleRadios = 300f
         const val inCircleRadios = 200f
         const val strokeWidth = 100f
+        const val animateDuration = 500L
     }
 
 
@@ -63,7 +64,7 @@ class Roullete(context: Context, attributeSet: AttributeSet) : View(context), Vi
     private fun initPaint() {
 
         mBgPaint = Paint()
-        mBgPaint.color = Color.GREEN
+        mBgPaint.color = Color.WHITE
         mBgPaint.style = Paint.Style.FILL
         mBgPaint.strokeWidth = 4f
 
@@ -73,10 +74,15 @@ class Roullete(context: Context, attributeSet: AttributeSet) : View(context), Vi
         mSpPaint.style = Paint.Style.STROKE
         mSpPaint.strokeWidth = 4f
 
-        mArcPaint = Paint()
-        mArcPaint.color = Color.BLUE
-        mArcPaint.style = Paint.Style.STROKE
-        mArcPaint.strokeWidth = strokeWidth
+        mOutArcPaint = Paint()
+        mOutArcPaint.color = Color.BLUE
+        mOutArcPaint.style = Paint.Style.STROKE
+        mOutArcPaint.strokeWidth = strokeWidth
+
+        mInsideArcPaint = Paint()
+        mInsideArcPaint.color = Color.GREEN
+        mInsideArcPaint.style = Paint.Style.FILL
+        mInsideArcPaint.strokeWidth = strokeWidth
     }
 
     init {
@@ -89,55 +95,52 @@ class Roullete(context: Context, attributeSet: AttributeSet) : View(context), Vi
         super.onDraw(canvas)
         canvas.drawColor(Color.YELLOW)
 
-        drawBg(canvas)
-        drawSeparated(canvas)
+        drawBackGroundCircle(canvas)
+
+        drawSeparatedArea(canvas)
 
     }
 
-    private fun drawSeparated(canvas: Canvas) {
-        canvas.drawCircle((width / 2).toFloat(), (height / 2).toFloat(), 300F, mSpPaint)
-        canvas.drawCircle((width / 2).toFloat(), (height / 2).toFloat(), 200f, mSpPaint)
+    private fun drawSeparatedArea(canvas: Canvas) {
+        canvas.drawCircle((width / 2).toFloat(), (height / 2).toFloat(), outCircleRadios, mSpPaint)
+        canvas.drawCircle((width / 2).toFloat(), (height / 2).toFloat(), inCircleRadios, mSpPaint)
 
         canvas.translate((width / 2).toFloat(), (height / 2).toFloat())
 
-//        canvas.drawArc(moutRect, 0f, animatedValue - 60, false, mArcPaint)
-
         outAreaItem.clear()
         insideAreaItem.clear()
-        //刻度线长度为20，一圈是360度，并且秒针转一圈为60秒，所以一秒就对应360度/60秒=6度，那么五秒也就是5*6 = 30度
-        for (i in 0..359 step 60) {
-            if ( i % 120 == 0) {//外部区域
-                outAreaItem.add(120+i)
-                if (isOutsideSelectedItem==i/120) {
-                    canvas.translate(strokeWidth, strokeWidth)
-                    canvas.drawArc(moutRect, 0f, 120f, false, mArcPaint)
-                    canvas.translate(-strokeWidth, -strokeWidth)
-                } else {
-                    canvas.drawArc(moutRect, 0f, 120f, false, mArcPaint)
 
-                }
-                mArcPaint.color = this.colorList.get(i / 60)
-                canvas.drawLine(200f, 0f, outCircleRadios, 0f, mSpPaint)
-            } else if (i % 60 == 0&&i % 120 != 0) {//内部区域
-                insideAreaItem.add(i+120)
-                if (isInsideSelectedItem==i/120) {
-                    canvas.translate(strokeWidth, strokeWidth)
-                    canvas.drawArc(minsideRect, 0f, 120f, true, mBgPaint)
-                    canvas.translate(-strokeWidth, -strokeWidth)
+        var offsetWidth = strokeWidth * animatedValue / 360
+        for (i in 0..359 step 60) {
+            if (i % 120 == 0) {//外部区域
+                outAreaItem.add(120 + i)
+                if (isOutsideSelectedItem == i / 120) {
+                    canvas.translate(offsetWidth, offsetWidth)
+                    canvas.drawArc(moutRect, 0f, 120f, false, mOutArcPaint)
+                    canvas.translate(-offsetWidth, -offsetWidth)
                 } else {
-                    canvas.drawArc(minsideRect, 0f, 120f, true, mBgPaint)
+                    canvas.drawArc(moutRect, 0f, 120f, false, mOutArcPaint)
                 }
-                mBgPaint.color = this.colorList.get(i / 60)
-                canvas.drawLine(200f, 0f, inCircleRadios, 0f, mSpPaint)
+                mOutArcPaint.color = this.colorList[i / 60]
+                canvas.drawLine(200f, 0f, outCircleRadios, 0f, mSpPaint)
             }
             canvas.rotate(60f)
         }
-        LogUtils.i(  "insideAreaItem:" + insideAreaItem)
-
-    }
-
-    fun drawArc() {
-
+        for (i in 0..359 step 60) {
+            if (i % 60 == 0 && i % 120 != 0) {//内部区域
+                insideAreaItem.add(i + 120)
+                if (isInsideSelectedItem == i / 120) {
+                    canvas.translate(offsetWidth, offsetWidth)
+                    canvas.drawArc(minsideRect, 0f, 120f, true, mInsideArcPaint)
+                    canvas.translate(-offsetWidth, -offsetWidth)
+                } else {
+                    canvas.drawArc(minsideRect, 0f, 120f, true, mInsideArcPaint)
+                }
+                mInsideArcPaint.color = this.colorList.get(i / 60)
+                canvas.drawLine(0f, 0f, inCircleRadios, 0f, mSpPaint)
+            }
+            canvas.rotate(60f)
+        }
     }
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
@@ -146,10 +149,8 @@ class Roullete(context: Context, attributeSet: AttributeSet) : View(context), Vi
         moutRect = RectF(-outCircleRadios + strokeWidth / 2, -outCircleRadios + strokeWidth / 2
                 , outCircleRadios - strokeWidth / 2, outCircleRadios - strokeWidth / 2)
 
-        minsideRect = RectF(-inCircleRadios , -inCircleRadios
+        minsideRect = RectF(-inCircleRadios, -inCircleRadios
                 , inCircleRadios, inCircleRadios)
-//        mSelectRect = RectF(-outCircleRadios + strokeWidth / 2, -outCircleRadios + strokeWidth / 2
-//                , outCircleRadios - strokeWidth / 2, outCircleRadios - strokeWidth / 2)
     }
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
@@ -162,41 +163,41 @@ class Roullete(context: Context, attributeSet: AttributeSet) : View(context), Vi
         LogUtils.i(TAG + "onLayout")
     }
 
-    private fun drawBg(canvas: Canvas) {
+    private fun drawBackGroundCircle(canvas: Canvas) {
         canvas.drawCircle((width / 2).toFloat(), (height / 2).toFloat(), outCircleRadios, mBgPaint)
     }
 
     override fun onTouch(v: View, event: MotionEvent): Boolean {
-
-
         val x = event.x
         val y = event.y
-        LogUtils.e("onTouchEvent:" + x + " y :" + y)
-        calcDistance(x, y)
-        postDelayed( { isOutsideSelectedItem = -1 ;isInsideSelectedItem=-1;postInvalidate() }, 1000)
-        initAnimator(2000)
+        if (event.action == MotionEvent.ACTION_DOWN) {
+            calcDistance(x, y)
+            startAnimator(animateDuration)
+        }
         return true
     }
 
+
     //计算相对中心点的距离 计算属于内环外环
     private fun calcDistance(x: Float, y: Float) {
-
         var inout: String
         var outItemIndex = -1
         var inItemIndex = -1
         //外部圆形
         var len = sqrt(((width / 2 - x).toDouble()).pow(2.0) + ((height / 2 - y).toDouble()).pow(2.0))
         if (len >= 200) {
-            outItemIndex= calcOutAreaItemIndex(x, y,outAreaItem,0f)
+            outItemIndex = calcOutAreaItemIndex(x, y, outAreaItem, 0f)
             inout = "out"
         } else {//内部圆形
-            inItemIndex=calcInsideAreaItemIndex(x, y,insideAreaItem,0f)
+            inItemIndex = calcInsideAreaItemIndex(x, y, insideAreaItem, 0f)
             inout = "in"
         }
-        isOutsideSelectedItem  =outItemIndex
-        isInsideSelectedItem=inItemIndex
+        if (isOutsideSelectedItem != -1 || isInsideSelectedItem != -1) {
+            selectSameArea = isOutsideSelectedItem == outItemIndex || isInsideSelectedItem == inItemIndex
+        }
+        isOutsideSelectedItem = outItemIndex
+        isInsideSelectedItem = inItemIndex
         Toast.makeText(this@Roullete.context, "$inout len:$len degree：$isOutsideSelectedItem ", Toast.LENGTH_SHORT).show()
-        animator?.start()
     }
 
     /**
@@ -235,12 +236,13 @@ class Roullete(context: Context, attributeSet: AttributeSet) : View(context), Vi
         }
         return (radian * 180 / Math.PI).toFloat()
     }
-    private fun calcOutAreaItemIndex(x: Float, y: Float, areaItem:MutableList<Int>, offset:Float):Int {
+
+    private fun calcOutAreaItemIndex(x: Float, y: Float, areaItem: MutableList<Int>, offset: Float): Int {
         val calcAngle = calcAngle(x, y)
 
         val size = areaItem.size
-        for(i in 0 until size){
-            if(calcAngle<areaItem.get(i)){
+        for (i in 0 until size) {
+            if (calcAngle < areaItem.get(i)) {
                 LogUtils.w("calcOutAreaItemIndex +$calcAngle +： ${areaItem.get(i)}+ i : $i)")
                 return i
             }
@@ -248,16 +250,17 @@ class Roullete(context: Context, attributeSet: AttributeSet) : View(context), Vi
         return -1
 
     }
-    private fun calcInsideAreaItemIndex(x: Float, y: Float, areaItem:MutableList<Int>, offset:Float):Int {
+
+    private fun calcInsideAreaItemIndex(x: Float, y: Float, areaItem: MutableList<Int>, offset: Float): Int {
         var calcAngle = calcAngle(x, y)
 
         val size = areaItem.size
-        for(i in 0 until size){
+        for (i in 0 until size) {
 
-            if(calcAngle<60){
+            if (calcAngle < 60) {
                 calcAngle += 360f
             }
-            if(calcAngle <areaItem.get(i)){
+            if (calcAngle < areaItem.get(i)) {
                 LogUtils.w("calcOutAreaItemIndex +$calcAngle +： ${areaItem.get(i)}+ i : $i)")
                 return i
             }
@@ -266,20 +269,69 @@ class Roullete(context: Context, attributeSet: AttributeSet) : View(context), Vi
 
     }
 
-    private fun initAnimator(duration: Long) {
-        if (animator != null && animator!!.isRunning) {
-            animator?.cancel()
-            animator?.start()
+    private fun startAnimator(duration: Long) {
+        if (mDiverAnimator != null && mDiverAnimator!!.isRunning) {
+            mDiverAnimator?.cancel()
+//            mDiverAnimator?.start()
         } else {
-            animator = ValueAnimator.ofFloat(0f, 360f).setDuration(duration)
+            mDiverAnimator = ValueAnimator.ofFloat(0f, 360f).setDuration(duration)
             var timeInterpolator = AccelerateDecelerateInterpolator()
-            animator?.interpolator = timeInterpolator
-            animator?.addUpdateListener(AnimatorUpdateListener { animation ->
+            mDiverAnimator?.interpolator = timeInterpolator
+            mDiverAnimator?.addUpdateListener(AnimatorUpdateListener { animation ->
                 animatedValue = animation.animatedValue as Float
-                LogUtils.i(TAG + "animatedValue:" + animatedValue)
                 invalidate()
             })
-            animator?.start()
+            mDiverAnimator?.addListener(object : Animator.AnimatorListener {
+                override fun onAnimationRepeat(animation: Animator?) {
+                }
+
+                override fun onAnimationEnd(animation: Animator?) {
+                    LogUtils.e("@@onAnimationEnd")
+                    backAnimator(animateDuration)
+                }
+
+                override fun onAnimationCancel(animation: Animator?) {
+                    LogUtils.e("@@onAnimationCancel")
+                }
+
+                override fun onAnimationStart(animation: Animator?) {
+                }
+            })
+            mDiverAnimator?.start()
+        }
+    }
+
+    private fun backAnimator(duration: Long) {
+        if (mReturnAnimator != null && mReturnAnimator!!.isRunning) {
+            mReturnAnimator?.cancel()
+//            mReturnAnimator?.start()
+        } else {
+            mReturnAnimator = ValueAnimator.ofFloat(360f, 0f).setDuration(duration)
+            var timeInterpolator = AccelerateDecelerateInterpolator()
+            mReturnAnimator?.interpolator = timeInterpolator
+            mReturnAnimator?.addUpdateListener(AnimatorUpdateListener { animation ->
+                animatedValue = animation.animatedValue as Float
+                invalidate()
+            })
+            mReturnAnimator?.addListener(object : Animator.AnimatorListener {
+                override fun onAnimationRepeat(animation: Animator?) {
+
+                }
+
+                override fun onAnimationEnd(animation: Animator?) {
+                    post { isOutsideSelectedItem = -1;isInsideSelectedItem = -1;postInvalidate() }
+                    selectSameArea = false
+                }
+
+                override fun onAnimationCancel(animation: Animator?) {
+                    selectSameArea = false
+
+                }
+
+                override fun onAnimationStart(animation: Animator?) {
+                }
+            })
+            mReturnAnimator?.start()
         }
     }
 }
