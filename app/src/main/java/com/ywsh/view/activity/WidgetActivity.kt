@@ -18,12 +18,13 @@ import com.ywsh.ywsh.databinding.ActivityWidgetBinding
  */
 class WidgetActivity : AppCompatActivity() {
         private lateinit var binding: ActivityWidgetBinding
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         LogUtils.e("WidgetActivity@@@")
         binding = DataBindingUtil.setContentView(this, R.layout.activity_widget)
-        val widgetViewModel = WidgetViewModel()
-        binding.viewModel=widgetViewModel
+        val widgetViewModel = WidgetViewModel(binding)
+        binding?.viewModel=widgetViewModel
     }
 
 }

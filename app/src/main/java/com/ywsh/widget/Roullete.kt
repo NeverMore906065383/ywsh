@@ -27,16 +27,22 @@ import kotlin.math.sqrt
  * Descroption:
  */
 
-class Roullete(context: Context, attributeSet: AttributeSet) : View(context), View.OnTouchListener {
+class Roullete(context: Context, attributeSet: AttributeSet) : View(context, attributeSet), View.OnTouchListener {
+    private var startRotate: Boolean = false
+    private var mRotateDegree: Float = 0f
     private lateinit var mBgPaint: Paint
     private lateinit var mSpPaint: Paint
     private lateinit var mOutArcPaint: Paint
     private lateinit var mInsideArcPaint: Paint
-    private var colorList = listOf(Color.RED, Color.BLUE, Color.GREEN, Color.RED, Color.BLUE, Color.GREEN, Color.RED, Color.BLUE, Color.GREEN)
+    private var colorList = listOf(Color.RED, Color.BLUE, Color.GREEN
+            , Color.RED, Color.BLUE, Color.GREEN,
+            Color.RED, Color.BLUE, Color.GREEN,
+            Color.RED, Color.BLUE, Color.GREEN)
     private var isOutsideSelectedItem = -1
     private var isInsideSelectedItem = -1
     private var selectSameArea = false
     private var mDiverAnimator: ValueAnimator? = null
+    private var mRotateAnimator: ValueAnimator? = null
     private var mReturnAnimator: ValueAnimator? = null
     private var animatedValue: Float = 0f
     private val TAG = "Roullete-"
@@ -111,7 +117,32 @@ class Roullete(context: Context, attributeSet: AttributeSet) : View(context), Vi
         insideAreaItem.clear()
 
         var offsetWidth = strokeWidth * animatedValue / 360
+        outSideCircle(canvas, offsetWidth)
+
+        insideCircle(canvas, offsetWidth)
+    }
+
+    private fun insideCircle(canvas: Canvas, offsetWidth: Float) {
         for (i in 0..359 step 60) {
+            if (i % 60 == 0 && i % 120 != 0) {//内部区域
+                insideAreaItem.add(i + 120)
+                if (isInsideSelectedItem == i / 120) {
+                    canvas.translate(offsetWidth, offsetWidth)
+                    canvas.drawArc(minsideRect, 0f, 120f, true, mInsideArcPaint)
+                    canvas.translate(-offsetWidth, -offsetWidth)
+                } else {
+                    canvas.drawArc(minsideRect, if (startRotate) mRotateDegree else 0f
+                            , if (startRotate) mRotateDegree + 120f else 120f, true, mInsideArcPaint)
+                }
+                mInsideArcPaint.color = this.colorList.get(i / 60)
+                canvas.drawLine(0f, 0f, inCircleRadios, 0f, mSpPaint)
+            }
+            canvas.rotate(60f)
+        }
+    }
+
+    private fun outSideCircle(canvas: Canvas, offsetWidth: Float) {
+        for (i in 0..359 step 120) {
             if (i % 120 == 0) {//外部区域
                 outAreaItem.add(120 + i)
                 if (isOutsideSelectedItem == i / 120) {
@@ -124,22 +155,7 @@ class Roullete(context: Context, attributeSet: AttributeSet) : View(context), Vi
                 mOutArcPaint.color = this.colorList[i / 60]
                 canvas.drawLine(200f, 0f, outCircleRadios, 0f, mSpPaint)
             }
-            canvas.rotate(60f)
-        }
-        for (i in 0..359 step 60) {
-            if (i % 60 == 0 && i % 120 != 0) {//内部区域
-                insideAreaItem.add(i + 120)
-                if (isInsideSelectedItem == i / 120) {
-                    canvas.translate(offsetWidth, offsetWidth)
-                    canvas.drawArc(minsideRect, 0f, 120f, true, mInsideArcPaint)
-                    canvas.translate(-offsetWidth, -offsetWidth)
-                } else {
-                    canvas.drawArc(minsideRect, 0f, 120f, true, mInsideArcPaint)
-                }
-                mInsideArcPaint.color = this.colorList.get(i / 60)
-                canvas.drawLine(0f, 0f, inCircleRadios, 0f, mSpPaint)
-            }
-            canvas.rotate(60f)
+            canvas.rotate(120f)
         }
     }
 
@@ -325,13 +341,53 @@ class Roullete(context: Context, attributeSet: AttributeSet) : View(context), Vi
 
                 override fun onAnimationCancel(animation: Animator?) {
                     selectSameArea = false
-
                 }
 
                 override fun onAnimationStart(animation: Animator?) {
                 }
             })
             mReturnAnimator?.start()
+        }
+    }
+
+    override fun onWindowFocusChanged(hasWindowFocus: Boolean) {
+        super.onWindowFocusChanged(hasWindowFocus)
+        mDiverAnimator?.cancel()
+        mReturnAnimator?.cancel()
+    }
+
+    fun rotate(isInside: Boolean) {
+        startRotate = true
+        initRotateAnimate(3000)
+    }
+
+    private fun initRotateAnimate(duration: Long) {
+        if (mRotateAnimator != null && mRotateAnimator!!.isRunning) {
+            mRotateAnimator?.cancel()
+//            mReturnAnimator?.start()
+        } else {
+            mRotateAnimator = ValueAnimator.ofFloat(0f, 120f).setDuration(duration)
+            var timeInterpolator = AccelerateDecelerateInterpolator()
+            mRotateAnimator?.interpolator = timeInterpolator
+            mRotateAnimator?.addUpdateListener(AnimatorUpdateListener { animation ->
+                mRotateDegree = animation.animatedValue as Float
+                invalidate()
+            })
+            mRotateAnimator?.addListener(object : Animator.AnimatorListener {
+                override fun onAnimationRepeat(animation: Animator?) {
+
+                }
+
+                override fun onAnimationEnd(animation: Animator?) {
+                }
+
+                override fun onAnimationCancel(animation: Animator?) {
+                }
+
+                override fun onAnimationStart(animation: Animator?) {
+                }
+            })
+            mRotateAnimator?.start()
         }
     }
 }
