@@ -288,30 +288,15 @@ class Roullete(context: Context, attributeSet: AttributeSet) : View(context, att
     private fun startAnimator(duration: Long) {
         if (mDiverAnimator != null && mDiverAnimator!!.isRunning) {
             mDiverAnimator?.cancel()
-//            mDiverAnimator?.start()
         } else {
             mDiverAnimator = ValueAnimator.ofFloat(0f, 360f).setDuration(duration)
+            mDiverAnimator?.repeatCount=1;
+            mDiverAnimator?.repeatMode=ValueAnimator.REVERSE
             var timeInterpolator = AccelerateDecelerateInterpolator()
             mDiverAnimator?.interpolator = timeInterpolator
             mDiverAnimator?.addUpdateListener(AnimatorUpdateListener { animation ->
                 animatedValue = animation.animatedValue as Float
                 invalidate()
-            })
-            mDiverAnimator?.addListener(object : Animator.AnimatorListener {
-                override fun onAnimationRepeat(animation: Animator?) {
-                }
-
-                override fun onAnimationEnd(animation: Animator?) {
-                    LogUtils.e("@@onAnimationEnd")
-                    backAnimator(animateDuration)
-                }
-
-                override fun onAnimationCancel(animation: Animator?) {
-                    LogUtils.e("@@onAnimationCancel")
-                }
-
-                override fun onAnimationStart(animation: Animator?) {
-                }
             })
             mDiverAnimator?.start()
         }

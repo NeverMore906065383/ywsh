@@ -15,7 +15,11 @@
         android:orientation="vertical">
 
         <Button
+            android:id="@+id/below"
+
             android:layout_width="wrap_content"
+            android:onClick="@{viewModel.buttonclick}"
+
             android:layout_height="wrap_content"
             android:text="sdfasdf" />
 
@@ -24,16 +28,9 @@
             android:layout_width="300dp"
             android:layout_height="300dp" />
         <com.ywsh.widget.CircleView
-            android:layout_width="100dp"
+            android:layout_width="300dp"
             android:id="@+id/circleview"
-            android:layout_height="100dp"/>
+            android:layout_height="300dp"/>
 
-
-        <Button
-            android:id="@+id/below"
-            android:onClick="@{viewModel.buttonclick}"
-            android:layout_width="wrap_content"
-            android:text="button"
-            android:layout_height="wrap_content"/>
     </LinearLayout>
 </layout>
